@@ -1,0 +1,80 @@
+---
+title: "p8105_hw6_zy2378"
+author: "zy"
+date: "12/2/2021"
+output: html_document
+---
+
+
+```{r}
+library(tidyverse)
+library(MASS)
+library(purrr)
+library(modelr)
+library(mgcv)
+library(p8105.datasets)
+
+```
+
+```{r}
+birthweight_df=
+  readr::read_csv("./data/birthweight.csv")%>%
+  mutate(babysex=factor(babysex,levels=c(1,2)))%>%
+  mutate(malform=factor(malform,levels=c(0,1)))%>%
+  drop_na()
+birthweight_df
+
+fit<-lm(bwt~babysex+bhead+blength+delwt+fincome+frace+gaweeks+malform+menarche+mheight+momage+mrace+parity+pnumlbw+pnumsga+ppbmi+ppwt+smoken+wtgain,data = birthweight_df)
+step_lm<-stepAIC(fit,direction = "both",trace = TRUE)
+step_lm
+
+```
+  Use stepwise regression to build the multiple linear regression model, and birthweight as the response.
+
+
+```{r}
+ birthweight_df=
+  birthweight_df%>%
+  modelr::add_residuals(step_lm)%>%
+  modelr::add_predictions(step_lm)%>%
+  pivot_longer(resid:pred,names_to = "name",values_to="value")
+ birthweight_df
+
+
+birthweight_df%>%
+   ggplot(aes(x=frace,y=value,group=name,color=name))+
+   geom_point()
+  
+```
+
+
+```{r}
+fit1<-lm(bwt~blength+gaweeks,data = birthweight_df)
+fit2<-lm(bwt~bhead+blength+babysex,data = birthweight_df)
+```
+
+```{r}
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2017-01-01",
+    date_max = "2017-12-31") %>%
+  mutate(
+    name = recode(id, USW00094728 = "CentralPark_NY"),
+    tmin = tmin / 10,
+    tmax = tmax / 10)%>%
+  relocate(name)
+
+boot_straps = 
+  data_frame(
+    strap_number = 1:5000,
+    strap_sample = bootstrap(weather_df,5000)
+  )
+
+
+
+boot_straps
+
+```
+
